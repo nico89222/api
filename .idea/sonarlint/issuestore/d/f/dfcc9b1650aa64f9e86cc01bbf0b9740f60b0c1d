@@ -1,0 +1,11 @@
+
+Q	java:S1253"<This block of commented-out lines of code should be removed.(èÅ
+Y
+java:S1128
+"CRemove this unused import 'org.springframework.stereotype.Service'.(¼º¡Ú
+V
+java:S1128";Remove this unused import 'javax.persistence.EntityResult'.(Äˆïøÿÿÿÿ
+U
+java:S1128":Remove this unused import 'javax.persistence.FieldResult'.(êçõÉøÿÿÿÿ
+]
+java:S1128"BRemove this unused import 'javax.persistence.SqlResultSetMapping'.(²™™Îüÿÿÿÿ
