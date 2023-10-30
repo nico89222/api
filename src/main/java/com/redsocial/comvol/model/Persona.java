@@ -35,6 +35,13 @@ public class Persona {
     private String localidad;
     private String perfilExterno;
 
+    private String esEmpresa;
+    @ManyToOne
+    @JoinColumn(name = "id_categoria")
+    private Categoria categoria;
+
+    private String numeroCelular;
+
 
     @ManyToMany
     @JoinTable(name = "persona_rol",

@@ -1,11 +1,16 @@
 spring:
   datasource:
-    driverClassName: com.microsoft.sqlserver.jdbc.SQLServerDriver
-    url: jdbc:sqlserver://localhost:1433;DatabaseName=api_comvol
-    username: sa
-    password: Pa$$w0rd1
+    driverClassName: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost/api_comvol
+    username: root
+    password: root
   jpa:
-    database-platform: org.hibernate.dialect.SQLServer2012Dialect
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
     hibernate:
       ddl-auto: update
     open-in-view: true
+    mail:
+      host: smtp.gmail.com
+      port: 587
+      username: empresa.comvol@gmail.com
+      password: ptugphpafbfgdjyz

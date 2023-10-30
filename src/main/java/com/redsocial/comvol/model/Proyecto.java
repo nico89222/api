@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "Proyecto")
@@ -34,6 +35,7 @@ public class Proyecto {
 
     private String tituloProyecto;
     private String descripcionProyecto;
+    private String puestoSolicitado;
     private int limitePersonasProyecto;
     private String urlImagenProyecto;
     private LocalDate fechaAltaProyecto;
@@ -46,6 +48,12 @@ public class Proyecto {
     private boolean esEmpresa;
 
     private String razonSocial;
+    @ManyToMany
+    @JoinTable(name = "proyecto_rol",
+            joinColumns = @JoinColumn(name = "id_proyecto"),
+            inverseJoinColumns = @JoinColumn(name = "id_rol"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"id_proyecto","id_rol"}))
+    private List<Rol> listaRolesProyecto;
 
 
 }

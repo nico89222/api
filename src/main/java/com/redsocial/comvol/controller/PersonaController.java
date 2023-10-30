@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.mail.MessagingException;
 import java.util.List;
 
 
@@ -27,6 +28,7 @@ public class PersonaController {
     private static final String MODIFICAR_CONTRASENA = "/modificar_contrasena";
     private static final String ACTIVACION_PERSONA = "/activar_usuario";
     private static final String INICIO_SESION = "/inicio_sesion";
+    private static final String COMPARTIR = "/compartir_proyecto";
 
     @Autowired
     private final PersonaService personaService;
@@ -103,5 +105,13 @@ public class PersonaController {
 
         return personaService.chequeaContrasena(inicioSesionDto);
     }
+
+    @GetMapping(value = COMPARTIR, produces = "application/json")
+    public void compartirProyectoAPostulado(@RequestParam(name = "id_persona") Long idPersona,
+                                            @RequestParam(name = "url_proyecto") String urlProyecto,
+                                            @RequestParam(name = "id_referente") Long idReferente) throws MessagingException {
+        personaService.compartirProyecto(idPersona,urlProyecto,idReferente);
+    }
+
 
 }

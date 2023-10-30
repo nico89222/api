@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
+import javax.mail.MessagingException;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -29,7 +31,7 @@ public class PersonaProyectoController {
     @PostMapping(value = PRE_POSTULACION, produces = "application/json")
     public PostulacionResponseDto postularPersona(@RequestParam(name = "id_persona") Long idPersona,
                                                   @RequestParam(name = "id_proyecto") Long idProyecto,
-                                                  @RequestBody PersonaRolDto personaRolDto) {
+                                                  @RequestBody PersonaRolDto personaRolDto) throws MessagingException {
 
         return personaProyectoService.crearPostulacion(idPersona, idProyecto, personaRolDto);
 

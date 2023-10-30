@@ -4,19 +4,24 @@ import com.redsocial.comvol.converter.PersonaToDetallePersonaDtoConverter;
 import com.redsocial.comvol.dto.persona.*;
 import com.redsocial.comvol.exception.BadRequestException;
 import com.redsocial.comvol.model.*;
+import com.redsocial.comvol.repository.CategoriaRepository;
 import com.redsocial.comvol.repository.PaisRepository;
 import com.redsocial.comvol.repository.PersonaRepository;
 import com.redsocial.comvol.repository.RolRepository;
 import com.redsocial.comvol.services.encrypt.EncryptServiceImpl;
 import com.redsocial.comvol.utils.Mensajes;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 
-
+import javax.mail.MessagingException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import javax.validation.Valid;
 import java.time.LocalDate;
 import java.util.*;
@@ -32,6 +37,11 @@ public class PersonaService {
     private final EncryptServiceImpl encryptServiceImpl;
     private final PaisRepository paisRepository;
     private final RolRepository rolRepository;
+
+    private final CategoriaRepository categoriaRepository;
+
+    @Autowired
+    private JavaMailSender mailSender;
 
 
     public PersonaResponseDto crearPersona(@Valid CrearPersonaDto crearPersonaDto ) {
@@ -58,6 +68,7 @@ public class PersonaService {
 
         Pais pais = paisRepository.findById(crearPersonaDto.getPais()).orElseThrow(() -> new BadRequestException(Mensajes.PAIS_NO_ENCONTRADA));
         List<Rol> listaRoles = rolRepository.findAllById(crearPersonaDto.getPersonaRoles());
+        Categoria categoria = categoriaRepository.findById(crearPersonaDto.getCategoria()).orElseThrow(()-> new BadRequestException(Mensajes.CATEGORIA_NO_ENCONTRADO));
 
 
         return Persona.builder()
@@ -74,6 +85,9 @@ public class PersonaService {
                 .localidad(crearPersonaDto.getLocalidad())
                 .perfilExterno(crearPersonaDto.getPerfilExterno())
                 .listaRoles(listaRoles)
+                .categoria(categoria)
+                .numeroCelular(crearPersonaDto.getNumeroCelular())
+                .esEmpresa(crearPersonaDto.getEsEmpresa())
                 .build();
 
     }
@@ -123,6 +137,10 @@ public class PersonaService {
 
         List<Rol> listaRoles = rolRepository.findAllById(editarPersonaDto.getPersonaRoles());
 
+        Categoria categoria = categoriaRepository.findById(editarPersonaDto.getIdCategoria()).orElseThrow(()-> new BadRequestException(Mensajes.CATEGORIA_NO_ENCONTRADO));
+
+        Pais pais = paisRepository.findById(editarPersonaDto.getIdPais()).orElseThrow(()-> new BadRequestException(Mensajes.PAIS_NO_ENCONTRADA));
+
         persona.setNombre(editarPersonaDto.getNombre());
         persona.setApellido(editarPersonaDto.getApellido());
         persona.setAcercaDe(editarPersonaDto.getAcercaDe());
@@ -130,6 +148,10 @@ public class PersonaService {
         persona.setLocalidad(editarPersonaDto.getLocalidad());
         persona.setPerfilExterno(editarPersonaDto.getPerfilExterno());
         persona.setListaRoles(listaRoles);
+        persona.setNumeroCelular(editarPersonaDto.getNumeroCelular());
+        persona.setCategoria(categoria);
+        persona.setEsEmpresa(editarPersonaDto.getEsEmpresa());
+        persona.setPais(pais);
 
         return persona;
     }
@@ -197,6 +219,8 @@ public class PersonaService {
 
         validarCamposFiltro(listaRolId, listaPaisId);
 
+        String esEmpresa = "NO";
+
         Page<Persona> resultado = personaRepository.filtroPersona(listaRolId, listaPaisId, PageRequest.of(pagina, cantidad));
 
         return resultado.map(this::mapearResultadoFiltro);
@@ -209,6 +233,7 @@ public class PersonaService {
         String suscripcion = persona.isSuscripcion()?"Si":"No";
 
         return DetalleBusquedaPersonaDto.builder()
+                .idPersona(persona.getIdPersona())
                 .nombre(persona.getNombre())
                 .apellido(persona.getApellido())
                 .email(persona.getEmail())
@@ -218,6 +243,8 @@ public class PersonaService {
                 .pais(persona.getPais().getDescripcionPais())
                 .rol(persona.getListaRoles().stream().map(Rol::getDescripcionRol).collect(Collectors.toList()))
                 .suscripcion(suscripcion)
+                .numeroCelular(persona.getNumeroCelular())
+                .acercaDe(persona.getAcercaDe())
                 .build();
 
     }
@@ -284,10 +311,16 @@ public class PersonaService {
 
     public PersonaResponseDto modificarContrasena(Long idPersona, CambioContrasenaDto cambioContrasenaDto) {
 
+        Persona persona = buscarPersona(idPersona);
+
+        if (encryptServiceImpl.verifyPassword(cambioContrasenaDto.getActualContrasena(),persona.getContrasena())){
+
+        }else{
+            throw new BadRequestException(Mensajes.ERROR_INICIO_SESION);
+        }
+
         if (validarContrasena(cambioContrasenaDto.getNuevaContrasena(), cambioContrasenaDto.getNuevaReContrasena()))
             throw new BadRequestException(Mensajes.ERROR_CONTRASENAS);
-
-        Persona persona = buscarPersona(idPersona);
 
         persona.setContrasena(encryptServiceImpl.encryptPassword(cambioContrasenaDto.getNuevaContrasena()));
 
@@ -331,6 +364,35 @@ public class PersonaService {
         return PersonaResponseSesionDto.builder()
                 .id(persona.getIdPersona())
                 .tipoUsuario(persona.getTipoUsuario())
+                .esEmpresa(persona.getEsEmpresa())
                 .build();
+    }
+
+    public void compartirProyecto(Long idPersona, String urlProyecto, Long idReferente) throws MessagingException {
+
+        Persona postulante = buscarPersona(idPersona);
+        Persona referente = buscarPersona(idReferente);
+
+        enviarCorreo(postulante.getEmail(),"Una empresa esta interesada en vos ;)","Si estas interesado en su propuesta por favor postulate",urlProyecto);
+    }
+
+    public void enviarCorreo(String email,String titulo,String texto,String enlace) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+
+        message.setFrom(new InternetAddress(email));
+        message.setRecipients(MimeMessage.RecipientType.TO, email);
+        message.setSubject("Prueba");
+
+        String emoji = "";
+
+        String htmlContent = "<h3>"+titulo+" "+"<i class=\"fa-solid fa-face-smile\"></i>"+"</h3>" +
+                "<p>"+texto+"</p>"+
+                "<button type=\"button\""+" class=\"btn btn-primary\">"+
+                "<a href=\'"+enlace+"\'+"+">"+"Ver Proyecto"+"</a>"+
+        "</button>";
+        message.setContent(htmlContent, "text/html; charset=utf-8");
+
+
+        mailSender.send(message);
     }
 }

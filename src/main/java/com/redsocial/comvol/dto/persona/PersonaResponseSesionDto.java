@@ -11,4 +11,6 @@ public class PersonaResponseSesionDto {
     private Long id;
     private Integer tipoUsuario;
 
+    private String esEmpresa;
+
 }

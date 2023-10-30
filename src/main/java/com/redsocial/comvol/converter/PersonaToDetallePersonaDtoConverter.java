@@ -34,6 +34,10 @@ public class PersonaToDetallePersonaDtoConverter implements Converter<Persona, D
                 .perfilExterno(persona.getPerfilExterno())
                 .personaRoles(listadoRoles)
                 .roles(persona.getListaRoles())
+                .descripcionCategoria(persona.getCategoria().getDescripcionCategoria())
+                .idCategoria(persona.getCategoria().getIdCategoria())
+                .esEmpresa(persona.getEsEmpresa())
+                .numeroCelular(persona.getNumeroCelular())
                 .build();
     }
 }

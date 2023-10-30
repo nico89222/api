@@ -8,6 +8,8 @@ import javax.validation.constraints.NotNull;
 public class CambioContrasenaDto {
 
     @NotNull
+    private String actualContrasena;
+    @NotNull
     private String nuevaContrasena;
     @NotNull
     private String nuevaReContrasena;

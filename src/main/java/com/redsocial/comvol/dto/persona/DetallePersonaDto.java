@@ -1,5 +1,6 @@
 package com.redsocial.comvol.dto.persona;
 
+import com.redsocial.comvol.model.Categoria;
 import com.redsocial.comvol.model.Rol;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +25,10 @@ public class DetallePersonaDto {
     private String perfilExterno;
     private List<String> personaRoles;
     private List<Rol> roles;
+    private Long idCategoria;
+    private String descripcionCategoria;
+    private String numeroCelular;
+    private String esEmpresa;
 
 
 

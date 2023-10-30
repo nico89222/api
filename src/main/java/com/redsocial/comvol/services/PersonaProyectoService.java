@@ -6,11 +6,16 @@ import com.redsocial.comvol.model.*;
 import com.redsocial.comvol.repository.*;
 import com.redsocial.comvol.utils.Mensajes;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,8 +32,13 @@ public class PersonaProyectoService {
     private final EstadoPersonaRepository estadoPersonaRepository;
     private final PersonaProyectoRepository personaProyectoRepository;
     private final PersonaRepository personaRepository;
+    private final EstadoRepository estadoRepository;
 
-    public PostulacionResponseDto crearPostulacion(Long idPersona, Long idProyecto, PersonaRolDto personaRolDto) {
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    public PostulacionResponseDto crearPostulacion(Long idPersona, Long idProyecto, PersonaRolDto personaRolDto) throws MessagingException {
 
         Persona persona = personaService.buscarPersona(idPersona);
         Proyecto proyecto = proyectoService.buscarProyecto(idProyecto);
@@ -40,7 +50,7 @@ public class PersonaProyectoService {
         if (resultadoPersonaProyecto.isPresent())
             throw new BadRequestException(Mensajes.YA_SE_ENCUENTRA_POSTULADO);
 
-
+        enviarCorreo(persona.getEmail(), "Felicidades por tu postulacion", "Muchas gracias por postularte", "http://localhost:3000/");
         return postulacionResponse(guardarPostulacion(mapearPostulacion(persona, proyecto, rol, estadoPersona)));
 
     }
@@ -130,8 +140,29 @@ public class PersonaProyectoService {
 
         modificarEstadoYGuardar(postulacionPersona, estadoPersona);
 
+        descontarYValidarCantidadIntegrantes(proyecto);
+
+        proyectoService.guardarProyecto(proyecto);
+
         return guardarPersonaProyecto(mapearPersonaProyecto(crearPersonaProyectoDto));
 
+    }
+
+    private void descontarYValidarCantidadIntegrantes(Proyecto proyecto){
+        if(proyecto.getLimitePersonasProyecto() > 0){
+            proyecto.setLimitePersonasProyecto(proyecto.getLimitePersonasProyecto()-1);
+            proyectoService.guardarProyecto(validarSiLlegoACero(proyecto));
+        }
+
+    }
+
+
+    private Proyecto validarSiLlegoACero(Proyecto proyecto){
+        if(proyecto.getLimitePersonasProyecto() == 0){
+            proyecto.setEstadoProyecto(estadoRepository.findById(2L).orElseThrow(() -> new BadRequestException(Mensajes.ESTADO_NO_ENCONTRADO)));
+            return proyecto;
+        }
+        return proyecto;
     }
 
     private PostulacionPersona modificarEstadoYGuardar(PostulacionPersona postulacionPersona, EstadoPersona estadoPersona) {
@@ -174,7 +205,7 @@ public class PersonaProyectoService {
         if (personaEstadolDto.getIdEstadoPersona() != 3)
             throw new BadRequestException(Mensajes.ESTADO_PERSONA_CANCELADO);
 
-        if (postulacionPersona.getIdEstadoPersona().getIdEstadoPersona() !=1)
+        if (postulacionPersona.getIdEstadoPersona().getIdEstadoPersona() != 1)
             throw new BadRequestException(Mensajes.ESTADO_PERSONA_CANCELADO);
 
         return postulacionResponse(modificarEstadoYGuardar(postulacionPersona, estadoPersona));
@@ -206,9 +237,11 @@ public class PersonaProyectoService {
                 .fechaBajaPersonaAlProyecto(personaProyecto.getFechaBajaPersonaAlProyecto())
                 .descripcionCategoria(personaProyecto.getProyecto().getCategoriaProyecto().getDescripcionCategoria())
                 .descripcionEstado(personaProyecto.getProyecto().getEstadoProyecto().getDescripcionEstado())
-                .propietario(personaProyecto.getProyecto().getIdResponsable().getNombre() +" "+personaProyecto.getProyecto().getIdResponsable().getApellido())
+                .propietario(personaProyecto.getProyecto().getIdResponsable().getNombre() + " " + personaProyecto.getProyecto().getIdResponsable().getApellido())
+                .numeroCelularPropietario(personaProyecto.getProyecto().getIdResponsable().getNumeroCelular())
                 .tituloProyecto(personaProyecto.getProyecto().getTituloProyecto())
                 .urlImagenProyecto(personaProyecto.getProyecto().getUrlImagenProyecto())
+                .numeroCelular(personaProyecto.getPersona().getNumeroCelular())
                 .build();
 
     }
@@ -216,9 +249,9 @@ public class PersonaProyectoService {
 
     public PersonaProyectoResponseDto bajaPersonaEnProyecto(Long idPersonaProyecto) {
 
-        PersonaProyecto personaProyecto = personaProyectoRepository.findById(idPersonaProyecto).orElseThrow(()-> new BadRequestException(Mensajes.PERSONA_PROYECTO_NO_ENCOTRADO));
+        PersonaProyecto personaProyecto = personaProyectoRepository.findById(idPersonaProyecto).orElseThrow(() -> new BadRequestException(Mensajes.PERSONA_PROYECTO_NO_ENCOTRADO));
 
-        if(personaProyecto.getFechaBajaPersonaAlProyecto() != null)
+        if (personaProyecto.getFechaBajaPersonaAlProyecto() != null)
             throw new BadRequestException(Mensajes.TIENE_BAJA_PROYECTO);
 
         personaProyecto.setFechaBajaPersonaAlProyecto(LocalDate.now());
@@ -229,7 +262,7 @@ public class PersonaProyectoService {
 
     public Page<DetalleProyectoPersonaDto> detalleProyectoPIntegrante(Long idPersona, Integer pagina, Integer cantidad) {
 
-        Persona persona = personaRepository.findById(idPersona).orElseThrow(()-> new BadRequestException(Mensajes.PERSONA_NO_ENCONTRADA));
+        Persona persona = personaRepository.findById(idPersona).orElseThrow(() -> new BadRequestException(Mensajes.PERSONA_NO_ENCONTRADA));
 
         Page<PersonaProyecto> listaProyectoPersona = personaProyectoRepository.findByPersona(persona, PageRequest.of(pagina, cantidad));
 
@@ -238,13 +271,33 @@ public class PersonaProyectoService {
 
     public Page<DetallePostulacionPersonaDto> detallePostulacionPersona(Long idPersona, Integer pagina, Integer cantidad) {
 
-        Persona persona = personaRepository.findById(idPersona).orElseThrow(()-> new BadRequestException(Mensajes.PERSONA_NO_ENCONTRADA));
+        Persona persona = personaRepository.findById(idPersona).orElseThrow(() -> new BadRequestException(Mensajes.PERSONA_NO_ENCONTRADA));
 
         Page<PostulacionPersona> listaPostulacionPersona = postulacionPersonaRepository.findByIdPersona(persona, PageRequest.of(pagina, cantidad));
 
 
-
         return listaPostulacionPersona.map(this::mapearPostulacionPersona);
+    }
+
+    public void enviarCorreo(String email, String titulo, String texto, String enlace) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+
+        message.setFrom(new InternetAddress(email));
+        message.setRecipients(MimeMessage.RecipientType.TO, email);
+        message.setSubject("Prueba");
+
+
+        String htmlContent =
+                        "<h2>"+titulo+"</h2>" +
+                        "<p>"+texto+"</p>" +
+                        "<a  type=\"button\" href = \""+enlace+"\"> Mas proyectos </a >" ;
+
+       /* String htmlContent = "<h1>"+titulo+"</h1>" +
+                "<p>"+texto+"</p>"+
+                "<a href='{enlace}'></a>";*/
+        message.setContent(htmlContent, "text/html; charset=utf-8");
+
+        mailSender.send(message);
     }
 }
 

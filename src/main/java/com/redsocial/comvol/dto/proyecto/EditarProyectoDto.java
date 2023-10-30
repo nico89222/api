@@ -5,6 +5,7 @@ import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @Data
 @Validated
@@ -16,6 +17,8 @@ public class EditarProyectoDto {
     @NotNull
     private String descripcionProyecto;
     @NotNull
+    private String puestoSolicitado;
+    @NotNull
     private Long idCategoriaProyecto;
     @NotNull
     private Long idEstadoProyecto;
@@ -26,5 +29,6 @@ public class EditarProyectoDto {
     private Long idFormaDePago;
     private boolean esEmpresa;
     private String razonSocial;
+    private List<Long> proyectoRoles;
 
 }

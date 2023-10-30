@@ -1,5 +1,6 @@
 package com.redsocial.comvol.dto.persona;
 
+import com.redsocial.comvol.model.Categoria;
 import lombok.Data;
 import org.springframework.lang.Nullable;
 import org.springframework.validation.annotation.Validated;
@@ -24,5 +25,13 @@ public class EditarPersonaDto {
     private String localidad;
     private String perfilExterno;
     private List<Long> personaRoles;
+
+    private String numeroCelular;
+
+    private String esEmpresa;
+
+    private Long idCategoria;
+
+    private Long idPais;
 
 }

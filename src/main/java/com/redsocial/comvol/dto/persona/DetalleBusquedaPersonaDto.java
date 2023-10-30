@@ -9,7 +9,7 @@ import java.util.List;
 @Builder
 public class DetalleBusquedaPersonaDto {
 
-
+    private Long idPersona;
     private String nombre;
     private String apellido;
     private String email;
@@ -19,5 +19,9 @@ public class DetalleBusquedaPersonaDto {
     private String perfilExterno;
     private List<String> rol;
     private String suscripcion;
+
+    private String numeroCelular;
+
+    private String acercaDe;
 
 }

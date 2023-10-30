@@ -34,6 +34,12 @@ public class CrearPersonaDto {
     private String perfilExterno;
     private List<Long> personaRoles;
 
+    private String esEmpresa;
+
+    private String numeroCelular;
+
+    private Long categoria;
+
 
 
 

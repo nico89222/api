@@ -23,6 +23,7 @@ public class ProyectoController {
     private static final String FILTRO_PROYECTO = "/filtrar";
 
 
+
     @Autowired
     private final ProyectoService proyectoService;
 
@@ -60,15 +61,17 @@ public class ProyectoController {
     public ResponseEntity<Page<DetalleBusquedaProyectoDto>> filtroPorProyecto(
             @RequestParam(name = "id_categoria") List<Long> listaCategoriaId,
             @RequestParam(name = "id_estado") List<Long> listaEstadoId,
+            @RequestParam(name = "id_rol") List<Long> listaRolId,
             @RequestParam(defaultValue = "0") Integer pagina,
             @RequestParam(defaultValue = "20") Integer cantidad) {
 
-        Page<DetalleBusquedaProyectoDto> listaProyectosFiltrada = proyectoService.listaProyectos(listaCategoriaId, listaEstadoId, pagina, cantidad);
+        Page<DetalleBusquedaProyectoDto> listaProyectosFiltrada = proyectoService.listaProyectos(listaCategoriaId, listaEstadoId, listaRolId, pagina, cantidad);
 
         return ResponseEntity.ok(listaProyectosFiltrada);
 
 
     }
+
 
 
 }

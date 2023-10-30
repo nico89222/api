@@ -31,6 +31,7 @@ public class ProyectoService {
     private final FormaDePagoRepository formaDePagoRepository;
     private final PersonaProyectoRepository personaProyectoRepository;
     private final PersonaRepository personaRepository;
+    private final RolRepository rolRepository;
 
 
     private final ProyectoToDetalleProyectoDtoConverter proyectoToDetalleProyectoDtoConverter;
@@ -46,9 +47,11 @@ public class ProyectoService {
         Estado estado = estadoRepository.findById(1L).orElseThrow(() -> new BadRequestException(Mensajes.ESTADO_NO_ENCONTRADO));
         Categoria categoria = categoriaRepository.findById(crearProyectoDto.getIdCategoriaProyecto()).orElseThrow(() -> new BadRequestException(Mensajes.CATEGORIA_NO_ENCONTRADO));
         FormaDePago formaDePago = formaDePagoRepository.findById(crearProyectoDto.getIdFormaDePago()).orElseThrow(() -> new BadRequestException(Mensajes.FORMA_DE_PAGO_NO_ENCONTRADO));
+        List<Rol> listaRolesProyecto = rolRepository.findAllById(crearProyectoDto.getProyectoRoles());
 
         return Proyecto.builder()
                 .descripcionProyecto(crearProyectoDto.getDescripcionProyecto())
+                .puestoSolicitado(crearProyectoDto.getPuestoSolicitado())
                 .tituloProyecto(crearProyectoDto.getTituloProyecto())
                 .estadoProyecto(estado)
                 .categoriaProyecto(categoria)
@@ -59,11 +62,12 @@ public class ProyectoService {
                 .esEmpresa(crearProyectoDto.isEsEmpresa())
                 .razonSocial(crearProyectoDto.getRazonSocial())
                 .fechaAltaProyecto(LocalDate.now())
+                .listaRolesProyecto(listaRolesProyecto)
                 .build();
 
     }
 
-    private Proyecto guardarProyecto(Proyecto proyecto) {
+    public Proyecto guardarProyecto(Proyecto proyecto) {
         return proyectoRepository.save(proyecto);
     }
 
@@ -100,9 +104,12 @@ public class ProyectoService {
         Categoria categoria = categoriaRepository.findById(editarProyectoDto.getIdCategoriaProyecto()).orElseThrow(() -> new BadRequestException(Mensajes.CATEGORIA_NO_ENCONTRADO));
         Estado estado = estadoRepository.findById(editarProyectoDto.getIdEstadoProyecto()).orElseThrow(() -> new BadRequestException(Mensajes.ESTADO_NO_ENCONTRADO));
         FormaDePago formaDePago = formaDePagoRepository.findById(editarProyectoDto.getIdFormaDePago()).orElseThrow(() -> new BadRequestException(Mensajes.FORMA_DE_PAGO_NO_ENCONTRADO));
+        List<Rol> listaRoles = rolRepository.findAllById(editarProyectoDto.getProyectoRoles());
+
 
         proyecto.setTituloProyecto(editarProyectoDto.getTituloProyecto());
         proyecto.setDescripcionProyecto(editarProyectoDto.getDescripcionProyecto());
+        proyecto.setPuestoSolicitado(editarProyectoDto.getPuestoSolicitado());
         proyecto.setCategoriaProyecto(categoria);
         proyecto.setEstadoProyecto(estado);
         proyecto.setLimitePersonasProyecto(editarProyectoDto.getLimitePersonasProyecto());
@@ -110,6 +117,7 @@ public class ProyectoService {
         proyecto.setFormaDePago(formaDePago);
         proyecto.setEsEmpresa(editarProyectoDto.isEsEmpresa());
         proyecto.setRazonSocial(editarProyectoDto.getRazonSocial());
+        proyecto.setListaRolesProyecto(listaRoles);
 
         if (proyecto.getFechaBajaProyecto() == null && estado.getIdEstado() == 3 || estado.getIdEstado() == 4) {
 
@@ -123,15 +131,18 @@ public class ProyectoService {
     }
 
 
-    public Page<DetalleBusquedaProyectoDto> listaProyectos(List<Long> listaCategoriaId, List<Long> listaEstadoId, Integer pagina, Integer cantidad) {
+    public Page<DetalleBusquedaProyectoDto> listaProyectos(List<Long> listaCategoriaId, List<Long> listaEstadoId, List <Long> listaRolId, Integer pagina, Integer cantidad) {
 
         listaCategoriaId = eliminarNulosLista(listaCategoriaId);
 
         listaEstadoId = eliminarNulosLista(listaEstadoId);
 
-        validarCamposFiltro(listaCategoriaId, listaEstadoId);
+        listaRolId = eliminarNulosLista(listaRolId);
 
-        Page<Proyecto> resultadoPaginado = proyectoRepository.filtroProyecto(listaCategoriaId, listaEstadoId, PageRequest.of(pagina, cantidad));
+        validarCamposFiltro(listaCategoriaId, listaEstadoId, listaRolId);
+
+        Page<Proyecto> resultadoPaginado = proyectoRepository.filtroProyecto(listaCategoriaId, listaEstadoId, listaRolId, PageRequest.of(pagina, cantidad));
+
 
         return mapearResultadoFiltro(resultadoPaginado);
     }
@@ -146,18 +157,20 @@ public class ProyectoService {
 
     }
 
-    private void validarCamposFiltro(List<Long> listaCategoriaId, List<Long> listaEstadoId) {
+    private void validarCamposFiltro(List<Long> listaCategoriaId, List<Long> listaEstadoId, List<Long> listaRolId) {
 
         List<Long> listaCategoriaExistente = categoriaRepository.findAll().stream().map(Categoria::getIdCategoria).collect(Collectors.toList());
 
         List<Long> listaEstadoExistente = estadoRepository.findAll().stream().map(Estado::getIdEstado).collect(Collectors.toList());
 
-        validarExisteCampos(listaCategoriaId, listaEstadoId, listaCategoriaExistente, listaEstadoExistente);
+        List<Long> listaRolExistente = rolRepository.findAll().stream().map(Rol::getIdRol).collect(Collectors.toList());
 
-        completaListasVaciasPorDefecto(listaCategoriaId, listaEstadoId, listaCategoriaExistente, listaEstadoExistente);
+        validarExisteCampos(listaCategoriaId, listaEstadoId, listaRolId, listaCategoriaExistente, listaEstadoExistente,listaRolExistente);
+
+        completaListasVaciasPorDefecto(listaCategoriaId, listaEstadoId, listaRolId, listaCategoriaExistente, listaEstadoExistente,listaRolExistente);
     }
 
-    private void completaListasVaciasPorDefecto(List<Long> listaCategoriaId, List<Long> listaEstadoId, List<Long> listaCategoriaExistente, List<Long> listaEstadoExistente) {
+    private void completaListasVaciasPorDefecto(List<Long> listaCategoriaId, List<Long> listaEstadoId, List<Long> listaRolId, List<Long> listaCategoriaExistente, List<Long> listaEstadoExistente, List<Long> listaRolExistente) {
 
         if (listaCategoriaId.isEmpty()) {
             listaCategoriaId.addAll(listaCategoriaExistente);
@@ -166,12 +179,17 @@ public class ProyectoService {
         if (listaEstadoId.isEmpty()) {
             listaEstadoId.addAll(listaEstadoExistente);
         }
+
+        if (listaRolId.isEmpty()) {
+            listaRolId.addAll(listaRolExistente);
+        }
     }
 
-    private void validarExisteCampos(List<Long> listaCategoriaId, List<Long> listaEstadoId, List<Long> listaCategoriaExistente, List<Long> listaEstadoExistente) {
+    private void validarExisteCampos(List<Long> listaCategoriaId, List<Long> listaEstadoId, List<Long> listaRolId, List<Long> listaCategoriaExistente, List<Long> listaEstadoExistente, List<Long> listaRolExistente ) {
 
         List<Long> listaCategoriasNoEncontrados = new ArrayList<>();
         List<Long> listaEstadosNoEncontrados = new ArrayList<>();
+        List<Long> listaRolNoEncontrados = new ArrayList<>();
 
         if (!listaCategoriaId.isEmpty())
             listaCategoriasNoEncontrados = listarDatosNoEncontrados(listaCategoriaId, listaCategoriaExistente);
@@ -179,7 +197,10 @@ public class ProyectoService {
         if (!listaEstadoId.isEmpty())
             listaEstadosNoEncontrados = listarDatosNoEncontrados(listaEstadoId, listaEstadoExistente);
 
-        camposNoEncontrados(listaCategoriasNoEncontrados, listaEstadosNoEncontrados);
+        if (!listaRolId.isEmpty())
+            listaRolNoEncontrados = listarDatosNoEncontrados(listaRolId, listaRolExistente);
+
+        camposNoEncontrados(listaCategoriasNoEncontrados, listaEstadosNoEncontrados,listaRolNoEncontrados);
     }
 
 
@@ -187,7 +208,7 @@ public class ProyectoService {
         return listaCamposId.stream().filter(campo -> listaDatosExistente.stream().noneMatch(campo::equals)).collect(Collectors.toList());
     }
 
-    private void camposNoEncontrados(List<Long> listaCategoriasNoEncontrados, List<Long> listaEstadosNoEncontrados) {
+    private void camposNoEncontrados(List<Long> listaCategoriasNoEncontrados, List<Long> listaEstadosNoEncontrados, List <Long> listaRolNoEncontrados) {
 
         if (!listaCategoriasNoEncontrados.isEmpty())
             throw new BadRequestException(Mensajes.CATEGORIA_NO_ENCONTRADO + listaCategoriasNoEncontrados);
@@ -195,20 +216,24 @@ public class ProyectoService {
         if (!listaEstadosNoEncontrados.isEmpty())
             throw new BadRequestException(Mensajes.ESTADO_NO_ENCONTRADO + listaEstadosNoEncontrados);
 
+        if (!listaRolNoEncontrados.isEmpty())
+            throw new BadRequestException(Mensajes.ROL_NO_ENCONTRADO + listaRolNoEncontrados);
+
     }
 
     private Page<DetalleBusquedaProyectoDto> mapearResultadoFiltro(Page<Proyecto> resultadoPaginado) {
-
 
         return resultadoPaginado.map(proyecto -> DetalleBusquedaProyectoDto.builder()
                 .idProyecto(proyecto.getIdProyecto())
                 .tituloProyecto(proyecto.getTituloProyecto())
                 .descripcionProyecto(proyecto.getDescripcionProyecto())
+                .puestoSolicitado(proyecto.getPuestoSolicitado())
                 .descripcionCategoria(proyecto.getCategoriaProyecto().getDescripcionCategoria())
                 .descripcionEstado(proyecto.getEstadoProyecto().getDescripcionEstado())
                 .formaDePago(proyecto.getFormaDePago().getDescripcionFormaDePago())
                 .limitePersonasProyecto(proyecto.getLimitePersonasProyecto())
                 .urlImagenPersona(proyecto.getUrlImagenProyecto())
+                .rolesProyecto(proyecto.getListaRolesProyecto().stream().map(p -> p.getDescripcionRol()).collect(Collectors.toList()))
                 .build());
     }
 

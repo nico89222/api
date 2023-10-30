@@ -32,6 +32,7 @@ public interface PersonaRepository extends JpaRepository<Persona, Long> {
     @Query(value = "SELECT p FROM Persona p " +
             "JOIN p.listaRoles rol JOIN p.pais pais " +
             "WHERE rol.id IN (:listaRoles) " +
+            "AND es_empresa = 'NO' " +
             "AND pais.id IN (:listaPaises) " +
             "ORDER BY p.idPersona")
     Page<Persona> filtroPersona(@Param("listaRoles") List<Long> listaRolId,

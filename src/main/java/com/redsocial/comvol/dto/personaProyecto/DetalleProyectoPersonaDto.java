@@ -23,5 +23,7 @@ public class DetalleProyectoPersonaDto {
     private String urlImagenProyecto;
     private String tituloProyecto;
     private String descripcionEstado;
+    private String numeroCelular;
+    private String numeroCelularPropietario;
 
 }

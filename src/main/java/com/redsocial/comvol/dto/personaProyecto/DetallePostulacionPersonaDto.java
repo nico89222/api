@@ -27,4 +27,5 @@ public class DetallePostulacionPersonaDto {
     private String descripcionCategoria;
     private List<String> personaRoles;
 
+
 }
