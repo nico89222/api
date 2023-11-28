@@ -1,9 +1,9 @@
 spring:
   datasource:
     driverClassName: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost/api_comvol
+    url: jdbc:mysql://roundhouse.proxy.rlwy.net:58891/railway
     username: root
-    password: root
+    password: 4GcH6h2CeG1bBfHh3egcHbbgFdC5hbEb
   jpa:
     database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
     hibernate:
@@ -13,4 +13,4 @@ spring:
       host: smtp.gmail.com
       port: 587
       username: empresa.comvol@gmail.com
-      password: ptugphpafbfgdjyz
+      password: fvqnrchwgxaqfbcp
