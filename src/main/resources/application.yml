@@ -1,9 +1,9 @@
 spring:
   datasource:
     driverClassName: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://roundhouse.proxy.rlwy.net:58891/railway
+    url: jdbc:mysql://monorail.proxy.rlwy.net:25265/railwa
     username: root
-    password: 4GcH6h2CeG1bBfHh3egcHbbgFdC5hbEb
+    password: eGBf1C3BA6fbG34hE523-4GB-gec-15D
   jpa:
     database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
     hibernate:
