@@ -50,7 +50,7 @@ public class PersonaProyectoService {
         if (resultadoPersonaProyecto.isPresent())
             throw new BadRequestException(Mensajes.YA_SE_ENCUENTRA_POSTULADO);
 
-        enviarCorreo(persona.getEmail(), "Felicidades por tu postulacion", "Muchas gracias por postularte", "http://localhost:3000/");
+        enviarCorreo(persona.getEmail(), "Felicidades por tu postulacion", "Muchas gracias por postularte", "https://main--stellar-bublanina-20e9ef.netlify.app/");
         return postulacionResponse(guardarPostulacion(mapearPostulacion(persona, proyecto, rol, estadoPersona)));
 
     }
